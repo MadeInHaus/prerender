@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+require('newrelic');
 var prerender = require('./lib')
 
 var server = prerender({
