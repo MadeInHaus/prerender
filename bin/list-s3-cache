@@ -15,12 +15,12 @@ s3.listObjects({ Prefix: prefix }, function(err, data) {
 	  if (err) console.log(err, err.stack); // an error occurred
 		else {
 			data.Contents.forEach(function(item) {
-				var url = encodeURIComponent(item.Key.replace(prefix, ''));
-				//var url = item.Key.replace(prefix, '');
+				//var url = encodeURIComponent(item.Key.replace(prefix, ''));
+				var url = item.Key.replace(prefix, '');
 				console.log('http://' + prerender_url + '/' + url);
 				http.request({
 					hostname: prerender_url,
-					path: url,
+					path: '/' + url,
 					method: 'GET'
 				}, function(res) {
 					console.log('Got status code: ' + res.statusCode);
