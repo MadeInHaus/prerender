@@ -3,7 +3,7 @@
 var s3 = new (require('aws-sdk')).S3({params:{Bucket: process.env.S3_BUCKET_NAME}});
 var http = require('http');
 
-var prerender_url = 'http://' + process.env.HEROKU_APP_NAME + '.herokuapp.com'
+var prerender_url = process.env.HEROKU_APP_NAME + '.herokuapp.com'
 
 var prefix = '';
 if (process.env.S3_PREFIX_KEY) {
@@ -16,7 +16,7 @@ s3.listObjects({ Prefix: prefix }, function(err, data) {
 		else {
 			data.Contents.forEach(function(item) {
 				var url = encodeURIComponent(item.Key.replace(prefix, ''));
-				console.log(prerender_url + '/' + url);
+				console.log('http://' + prerender_url + '/' + url);
 				http.request({
 					hostname: prerender_url,
 					path: url,
