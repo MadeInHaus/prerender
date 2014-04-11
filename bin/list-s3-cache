@@ -1,6 +1,9 @@
 #! /app/vendor/node/bin/node
 
 var s3 = new (require('aws-sdk')).S3({params:{Bucket: process.env.S3_BUCKET_NAME}});
+var http = require('http');
+
+var prerender_url = 'http://' + process.env.HEROKU_APP_NAME + '.herokuapp.com'
 
 var prefix = '';
 if (process.env.S3_PREFIX_KEY) {
@@ -12,8 +15,8 @@ s3.listObjects({ Prefix: prefix }, function(err, data) {
 	  if (err) console.log(err, err.stack); // an error occurred
 		else {
 			data.Contents.forEach(function(item) {
-				var url = item.Key.replace(prefix, '')
-					console.log(url);
+				var url = prerender_url + '/' + item.Key.replace(prefix, '');
+				console.log(url);
 			});
 
 		}
