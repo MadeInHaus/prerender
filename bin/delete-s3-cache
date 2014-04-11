@@ -17,7 +17,7 @@ s3.listObjects({ Prefix: prefix }, function(err, data) {
 			data.Contents.forEach(function(item) {
 				var key = item.Key;
 				console.log('deleting: ' + key);
-				s3.deleteObject({}, function(err, data) {
+				s3.deleteObject({key: key}, function(err, data) {
 					if (err) console.log(err, err.stack);
 					else {
 						console.log(data);
