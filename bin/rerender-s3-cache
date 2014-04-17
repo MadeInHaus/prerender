@@ -9,7 +9,7 @@ var prerender_url = process.env.HEROKU_APP_NAME + '.herokuapp.com';
 
 var prefix = '';
 if (process.env.S3_PREFIX_KEY) {
-		prefix = process.env.S3_PREFIX_KEY + '/';
+		prefix = process.env.S3_PREFIX_KEY;
 }
 console.log('old prefix: ' + prefix);
 
@@ -20,7 +20,8 @@ if (prefix_num) {
 	prefix_num = 0;
 };
 
-var new_prefix = 'prerender_' + prefix_num;
+prefix = prefix + "/";
+var new_prefix = 'prerender_' + prefix_num + '/';
 console.log('new prefix: ' + new_prefix);
 
 var update_prefix = function (new_prefix) {
