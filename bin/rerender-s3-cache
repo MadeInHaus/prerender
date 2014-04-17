@@ -18,12 +18,13 @@ s3.listObjects({ Prefix: prefix }, function(err, data) {
 				var key = item.Key;
 				var url = item.Key.replace(prefix, '');
 				console.log('deleting: ' + key + ' ('+url+')');
-				// s3.deleteObject({Key: key}, function(err, data) {
-				// 	if (err) console.log(err, err.stack);
-				// 	else {
-				// 		console.log(data);
-				// 	};
-				// });
+
+				s3.deleteObject({Key: key}, function(err, data) {
+					if (err) console.log(err, err.stack);
+					else {
+						console.log(data);
+					};
+				});
 
 				http.request({
 					hostname: prerender_url,
