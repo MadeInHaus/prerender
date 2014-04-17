@@ -2,6 +2,8 @@
 
 var s3 = new (require('aws-sdk')).S3({params:{Bucket: process.env.S3_BUCKET_NAME}});
 var http = require('http');
+var https = require('https');
+var Q = require('q');
 
 var prerender_url = process.env.HEROKU_APP_NAME + '.herokuapp.com';
 
@@ -9,31 +11,85 @@ var prefix = '';
 if (process.env.S3_PREFIX_KEY) {
 		prefix = process.env.S3_PREFIX_KEY + '/';
 }
+console.log('old prefix: ' + prefix);
 
-s3.listObjects({ Prefix: prefix }, function(err, data) {
+var prefix_num = prefix.match(/\d+$/);
+if (prefix_num) {
+	prefix_num = parseInt(prefix_num[0]);
+} else {
+	prefix_num = 0;
+};
+
+var new_prefix = 'prerender_' + prefix_num;
+console.log('new prefix: ' + new_prefix);
+
+var update_prefix = function (new_prefix) {
+	var heroku = https.request({
+		hostname: 'api.heroku.com',
+		path: '/apps/' + process.env.HEROKU_APP_NAME + '/config-vars',
+		method: 'PATCH',
+		headers: {
+			Accept: "application/vnd.heroku+json; version=3"
+		},
+		auth: process.env.HEROKU_EMAIL + ':' + process.env.HEROKU_API_TOKEN
+	}, function(res) {
+		var responseString = '';
+
+		res.on('data', function(data) {
+			responseString += data;
+		});
+
+		console.log('updating prefix', res.statusCode);
+	});
+
+	heroku.on('error', function(e) {
+	  console.log('Got error: ' + e.message);
+	});
+
+	heroku.write(JSON.stringify({S3_PREFIX_KEY: new_prefix}));
+	heroku.end();
+
+	console.log('response: ' + responseString);
+};
+
+var get_objects = function() {
+	var deferred = Q.defer();
+	s3.listObjects({ Prefix: prefix }, deferred.resolve);
+	return deferred.promise;
+};
+
+var handle_object = function(item) {
+	var key = item.Key;
+	var url = item.Key.replace(prefix, '');
+
+	console.log('deleting: ' + key + ' ('+url+')');
+
+	// JBT not deletint these for testing purposes
+	// s3.deleteObject({Key: key}, function(err, data) {
+	// 	if (err) console.log(err, err.stack);
+	// 	else {
+	// 		console.log(data);
+	// 	};
+	// });
+
+	http.request({
+		hostname: prerender_url,
+		path: '/' + url,
+		method: 'GET'
+	}, function(res) {
+		console.log('statusCode: ', res.statusCode);
+	}).end();
+};
+
+
+var handle_objects = function(err, data) {
 		console.log('S3 Object List');
-		if (err) console.log(err, err.stack); // an error occurred
-		else {
-			data.Contents.forEach(function(item) {
-				var key = item.Key;
-				var url = item.Key.replace(prefix, '');
-				console.log('deleting: ' + key + ' ('+url+')');
-
-				s3.deleteObject({Key: key}, function(err, data) {
-					if (err) console.log(err, err.stack);
-					else {
-						console.log(data);
-					};
-				});
-
-				http.request({
-					hostname: prerender_url,
-					path: '/' + url,
-					method: 'GET'
-				}, function(res) {
-					console.log('statusCode: ', res.statusCode);
-				}).end();
-			});
+		if (err) {
+			console.log(err, err.stack); // an error occurred
+		} else {
+			data.Contents.forEach(handle_object);
 
 		};
-});
+};
+
+get_objects().then(handle_objects);
