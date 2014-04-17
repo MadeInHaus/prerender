@@ -17,7 +17,7 @@ s3.listObjects({ Prefix: prefix }, function(err, data) {
 			data.Contents.forEach(function(item) {
 				var key = item.Key;
 				var url = item.Key.replace(prefix, '');
-				console.log('deleting: ' + key + '('+url+')');
+				console.log('deleting: ' + key + ' ('+url+')');
 				// s3.deleteObject({Key: key}, function(err, data) {
 				// 	if (err) console.log(err, err.stack);
 				// 	else {
@@ -31,7 +31,7 @@ s3.listObjects({ Prefix: prefix }, function(err, data) {
 					method: 'GET'
 				}, function(res) {
 					console.log('statusCode: ', res.statusCode);
-				});
+				}).end();
 			});
 
 		};
