@@ -33,14 +33,12 @@ https.request({
 		Accept: "application/vnd.heroku+json; version=3"
 	},
 	auth: process.env.HEROKU_EMAIL + ':' + process.env.HEROKU_API_TOKEN
-
 }, function(res) {
 	console.log('Resarted dynos with statusCode', res.statusCode);
 
-  	if(process.exit) process.exit();
+  if(process.exit) process.exit();
 
 }).on('error', function(e) {
   console.log('Got error: ' + e.message);
 
 }).end();
-
