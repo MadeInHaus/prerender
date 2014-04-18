@@ -57,13 +57,14 @@ var handle_update_prefix = function(res) {
 
 	console.log('updating prefix: ', res.statusCode);
 	console.log('response: ' + responseString);
+	return "boo";
 };
 
-update_prefix(new_prefix).then(handle_update_prefix);
 
 var get_objects = function(prefix) {
+	console.log('get_objects: ', prefix);
 	var deferred = Q.defer();
-	s3.listObjects({ Prefix: prefix+"/" }, deferred.makeNodeResolver());
+	s3.listObjects({ Prefix: prefix}, deferred.makeNodeResolver());
 	return deferred.promise;
 };
 
@@ -85,8 +86,10 @@ var handle_object = function(item) {
 
 
 var handle_objects = function(data) {
+	console.log('handle_objects');
 	var queue = [];
 	data.Contents.forEach(function(item) {
+		console.log('item: ', item);
 		queue.push(Q.call(handle_object, this, item));
 	});
 	return Q.all(queue);
@@ -96,8 +99,26 @@ var handle_objects_error = function(err) {
 		console.log(err, err.stack); // an error occurred
 }
 
-get_objects(prefix).then(handle_objects, handle_objects_error).then(null, console.log);
-
+update_prefix(new_prefix)
+.then(handle_update_prefix)
+.then(
+	function () {
+		return get_objects(prefix);
+	}
+)
+.then(handle_objects, handle_objects_error)
+.then(
+	function() {
+		return update_prefix(prefix);
+	}
+)
+.then(handle_update_prefix)
+.then(
+	function (args) {
+		console.log('args: ', args);
+		process.exit();
+	}
+);
 
 // JBT not deleteing these for testing purposes
 // s3.deleteObject({Key: key}, function(err, data) {
