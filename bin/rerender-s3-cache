@@ -69,50 +69,71 @@ var get_objects = function(prefix) {
 };
 
 var handle_object = function(item) {
-	console.log('got item: ', item);
+	var deferred = Q.defer();
+	console.log('got item: ', item.Key);
 	var key = item.Key;
 	var url = item.Key.replace(prefix, '');
 
-	console.log('deleting: ' + key + ' ('+url+')');
+	console.log('updating: ' + key + ' ('+url+')');
 
 	http.request({
 		hostname: prerender_url,
 		path: '/' + url,
 		method: 'GET'
-	}, function(res) {
-		console.log('statusCode: ', res.statusCode);
-	}).end();
+	}, deferred.resolve).end();
+
+	return deferred.promise;
 };
 
+var handle_object_result = function(res) {
+	var deferred = Q.defer();
+	console.log('statusCode: ', res.statusCode);
+	deferred.resolve(res.statusCode == 200);
+	return deferred.promise;
+}
+
+var handle_object_error = function(err) {
+	var deferred = Q.defer();
+	console.log('error:', err);
+	deferred.resolve(false);
+	return deferred.promise;
+}
 
 var handle_objects = function(data) {
-	console.log('handle_objects');
+	console.log('handle_objects: ', data.Contents.length);
 	var queue = [];
 	data.Contents.forEach(function(item) {
-		console.log('item: ', item);
-		queue.push(Q.call(handle_object, this, item));
+		console.log('item: ', item.Key);
+		queue.push(Q.fcall(handle_object, item).then(handle_object_result, handle_object_error));
 	});
 	return Q.all(queue);
 };
 
 var handle_objects_error = function(err) {
-		console.log(err, err.stack); // an error occurred
+		console.log("handle_objects_error: ", err, err.stack); // an error occurred
 }
 
 update_prefix(new_prefix)
 .then(handle_update_prefix)
+.delay(20000)
 .then(
 	function () {
 		return get_objects(prefix);
 	}
 )
 .then(handle_objects, handle_objects_error)
+.then(function (args) {
+	console.log('han: ', args);
+	return Q.resolve(10);
+})
 .then(
-	function() {
+	function(args) {
+		console.log('n:', args);
 		return update_prefix(prefix);
 	}
 )
 .then(handle_update_prefix)
+.delay(20000)
 .then(
 	function (args) {
 		console.log('args: ', args);
