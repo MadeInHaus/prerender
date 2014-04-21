@@ -23,7 +23,7 @@ if (prefix_num) {
 var new_prefix = 'prerender_' + prefix_num;
 console.log('new prefix: ' + new_prefix);
 
-var update_prefix = function (new_prefix) {
+function update_prefix(new_prefix) {
 	var deferred = Q.defer();
 	var prefix_json = JSON.stringify({S3_PREFIX_KEY: new_prefix});
 
@@ -46,9 +46,10 @@ var update_prefix = function (new_prefix) {
 	heroku.end();
 
 	return deferred.promise;
-};
+}
 
-var handle_update_prefix = function(res) {
+function handle_update_prefix(res) {
+	var deferred = Q.defer();
 	var responseString = '';
 
 	res.on('data', function(data) {
@@ -57,18 +58,19 @@ var handle_update_prefix = function(res) {
 
 	console.log('updating prefix: ', res.statusCode);
 	console.log('response: ' + responseString);
-	return "boo";
-};
+	deferred.resolve(res.statusCode);
+	return deferred.promise;
+}
 
 
-var get_objects = function(prefix) {
+function get_objects(prefix) {
 	console.log('get_objects: ', prefix);
 	var deferred = Q.defer();
 	s3.listObjects({ Prefix: prefix}, deferred.makeNodeResolver());
 	return deferred.promise;
-};
+}
 
-var handle_object = function(item) {
+function handle_object(item) {
 	var deferred = Q.defer();
 	console.log('got item: ', item.Key);
 	var key = item.Key;
@@ -83,23 +85,23 @@ var handle_object = function(item) {
 	}, deferred.resolve).end();
 
 	return deferred.promise;
-};
+}
 
-var handle_object_result = function(res) {
+function handle_object_result(res) {
 	var deferred = Q.defer();
 	console.log('statusCode: ', res.statusCode);
 	deferred.resolve(res.statusCode == 200);
 	return deferred.promise;
 }
 
-var handle_object_error = function(err) {
+function handle_object_error(err) {
 	var deferred = Q.defer();
 	console.log('error:', err);
 	deferred.resolve(false);
 	return deferred.promise;
 }
 
-var handle_objects = function(data) {
+function handle_objects(data) {
 	console.log('handle_objects: ', data.Contents.length);
 	var queue = [];
 	data.Contents.forEach(function(item) {
@@ -107,24 +109,20 @@ var handle_objects = function(data) {
 		queue.push(Q.fcall(handle_object, item).then(handle_object_result, handle_object_error));
 	});
 	return Q.all(queue);
-};
+}
 
-var handle_objects_error = function(err) {
+function handle_objects_error(err) {
 		console.log("handle_objects_error: ", err, err.stack); // an error occurred
 }
 
 update_prefix(new_prefix)
 .then(handle_update_prefix)
-.delay(20000)
-.then(
-	function () {
-		return get_objects(prefix);
-	}
-)
+.delay(10000)  //  give heroku 10 seconds to restart service
+.then(function () { return get_objects(prefix) })
 .then(handle_objects, handle_objects_error)
 .then(function (args) {
-	console.log('han: ', args);
-	return Q.resolve(10);
+	console.log('handle objects array: ', args);
+	return Q.resolve(args);
 })
 .then(
 	function(args) {
@@ -133,7 +131,7 @@ update_prefix(new_prefix)
 	}
 )
 .then(handle_update_prefix)
-.delay(20000)
+.delay(200)
 .then(
 	function (args) {
 		console.log('args: ', args);
