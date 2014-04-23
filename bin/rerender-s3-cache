@@ -1,11 +1,18 @@
 #! /app/vendor/node/bin/node
 
-var s3 = new (require('aws-sdk')).S3({params:{Bucket: process.env.S3_BUCKET_NAME}});
+/**
+
+	S3 bucket
+
+*/
+
 var http = require('http');
-var https = require('https');
 var Q = require('q');
 
-var prerender_url = process.env.HEROKU_APP_NAME + '.herokuapp.com';
+var prerenderPrefix = require('./prerenderPrefix');
+var currentCachedURLs = require('./currentCachedURLs');
+
+var prerenderURL = process.env.HEROKU_APP_NAME + '.herokuapp.com';
 
 var prefix = '';
 if (process.env.S3_PREFIX_KEY) {
@@ -13,62 +20,17 @@ if (process.env.S3_PREFIX_KEY) {
 }
 console.log('old prefix: ' + prefix);
 
-var prefix_num = prefix.match(/\d+$/);
-if (prefix_num) {
-	prefix_num = parseInt(prefix_num[0])+1;
+var prefixNum = prefix.match(/\d+$/);
+if (prefixNum) {
+	prefixNum = parseInt(prefixNum[0])+1;
 } else {
-	prefix_num = 0;
+	prefixNum = 0;
 };
 
-var new_prefix = 'prerender_' + prefix_num;
-console.log('new prefix: ' + new_prefix);
 
-function update_prefix(new_prefix) {
-	var deferred = Q.defer();
-	var prefix_json = JSON.stringify({S3_PREFIX_KEY: new_prefix});
+var newPrefix = 'prerender_' + prefixNum;
+console.log('new prefix: ' + newPrefix);
 
-	var heroku = https.request({
-		hostname: 'api.heroku.com',
-		path: '/apps/' + process.env.HEROKU_APP_NAME + '/config-vars',
-		method: 'PATCH',
-		headers: {
-			Accept: "application/vnd.heroku+json; version=3",
-			'Content-Length': ''+prefix_json.length
-		},
-		auth: process.env.HEROKU_EMAIL + ':' + process.env.HEROKU_API_TOKEN
-	}, deferred.resolve);
-
-	heroku.on('error', function(e) {
-	  console.log('Got error: ' + e.message);
-	});
-
-	heroku.write(prefix_json);
-	heroku.end();
-
-	return deferred.promise;
-}
-
-function handle_update_prefix(res) {
-	var deferred = Q.defer();
-	var responseString = '';
-
-	res.on('data', function(data) {
-		responseString += data;
-	});
-
-	console.log('updating prefix: ', res.statusCode);
-	console.log('response: ' + responseString);
-	deferred.resolve(res.statusCode);
-	return deferred.promise;
-}
-
-
-function get_objects(prefix) {
-	console.log('get_objects: ', prefix);
-	var deferred = Q.defer();
-	s3.listObjects({ Prefix: prefix}, deferred.makeNodeResolver());
-	return deferred.promise;
-}
 
 function handle_object(item) {
 	var deferred = Q.defer();
@@ -79,13 +41,14 @@ function handle_object(item) {
 	console.log('updating: ' + key + ' ('+url+')');
 
 	http.request({
-		hostname: prerender_url,
+		hostname: prerenderURL,
 		path: '/' + url,
 		method: 'GET'
 	}, deferred.resolve).end();
 
 	return deferred.promise;
 }
+
 
 function handle_object_result(res) {
 	var deferred = Q.defer();
@@ -94,6 +57,7 @@ function handle_object_result(res) {
 	return deferred.promise;
 }
 
+
 function handle_object_error(err) {
 	var deferred = Q.defer();
 	console.log('error:', err);
@@ -101,43 +65,55 @@ function handle_object_error(err) {
 	return deferred.promise;
 }
 
+
 function handle_objects(data) {
 	console.log('handle_objects: ', data.Contents.length);
 	var queue = [];
-	data.Contents.forEach(function(item) {
-		console.log('item: ', item.Key);
-		queue.push(Q.fcall(handle_object, item).then(handle_object_result, handle_object_error));
-	});
+
+	for (var item in data) {
+		console.log('item: ', item);
+		if (data.hasOwnProperty(item)) {
+			// data.Contents.forEach(
+			// 	function(item) {
+			// 		console.log('item: ', item.Key);
+			// 		queue.push(Q.fcall(handle_object, item).then(handle_object_result, handle_object_error));
+			// 	});
+		}
+	}
 	return Q.all(queue);
 }
+
 
 function handle_objects_error(err) {
 		console.log("handle_objects_error: ", err, err.stack); // an error occurred
 }
 
-update_prefix(new_prefix)
-.then(handle_update_prefix)
-.delay(10000)  //  give heroku 10 seconds to restart service
-.then(function () { return get_objects(prefix) })
-.then(handle_objects, handle_objects_error)
+prerenderPrefix.doChangePrefix(newPrefix)
+.then(function () { return currentCachedURLs.getCacheMap(prefix); })
 .then(function (args) {
 	console.log('handle objects array: ', args);
-	return Q.resolve(args);
-})
-.then(
-	function(args) {
-		console.log('n:', args);
-		return update_prefix(prefix);
-	}
-)
-.then(handle_update_prefix)
-.delay(200)
-.then(
-	function (args) {
-		console.log('args: ', args);
-		process.exit();
-	}
-);
+	return handle_objects(args);
+}, handle_objects_error)
+.then(function () { return prerenderPrefix.doChangePrefix(prefix); });
+
+
+// .then(handle_objects, handle_objects_error)
+// .then(function (args) {
+// 	console.log('handle objects array: ', args);
+// 	return Q.resolve(args);
+// })
+// .then(
+// 	function(args) {
+// 		console.log('n:', args);
+// 		return prerenderPrefix.doChangePrefix(prefix);
+// 	}
+// )
+// .then(
+// 	function (args) {
+// 		console.log('args: ', args);
+// 		process.exit();
+// 	}
+// );
 
 // JBT not deleteing these for testing purposes
 // s3.deleteObject({Key: key}, function(err, data) {
