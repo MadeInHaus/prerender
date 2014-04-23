@@ -2,7 +2,14 @@
 
 /**
 
-	S3 bucket
+	S3 bucket holds cached rendered endpoints with a prefix
+		updating endpoints is a matter of
+			changing prefix
+			rerendering all of the endpoints in the previous prefix
+
+	there is also a json file that tracks these -- not sure if we are going to use that or not
+
+	how would an endpoint be removed given this setup?
 
 */
 
@@ -34,15 +41,11 @@ console.log('new prefix: ' + newPrefix);
 
 function handle_object(item) {
 	var deferred = Q.defer();
-	console.log('got item: ', item.Key);
-	var key = item.Key;
-	var url = item.Key.replace(prefix, '');
-
-	console.log('updating: ' + key + ' ('+url+')');
+	console.log('got item: ', item);
 
 	http.request({
 		hostname: prerenderURL,
-		path: '/' + url,
+		path: '/' + item,
 		method: 'GET'
 	}, deferred.resolve).end();
 
@@ -67,17 +70,19 @@ function handle_object_error(err) {
 
 
 function handle_objects(data) {
-	console.log('handle_objects: ', data.Contents.length);
+	console.log('handle_objects: ', data);
 	var queue = [];
 
 	for (var item in data) {
 		console.log('item: ', item);
 		if (data.hasOwnProperty(item)) {
-			// data.Contents.forEach(
-			// 	function(item) {
-			// 		console.log('item: ', item.Key);
-			// 		queue.push(Q.fcall(handle_object, item).then(handle_object_result, handle_object_error));
-			// 	});
+			var endpoints = data[item];
+			endpoints.forEach(
+				function(endpoint) {
+					console.log('item: ', endpoint);
+					queue.push(Q.fcall(handle_object, endpoint).then(handle_object_result, handle_object_error));
+				}
+			);
 		}
 	}
 	return Q.all(queue);
@@ -90,30 +95,20 @@ function handle_objects_error(err) {
 
 prerenderPrefix.doChangePrefix(newPrefix)
 .then(function () { return currentCachedURLs.getCacheMap(prefix); })
-.then(function (args) {
-	console.log('handle objects array: ', args);
-	return handle_objects(args);
+.then(function (cacheMap) {
+	console.log('cacheMap: ', cacheMap);
+	return handle_objects(cacheMap);
 }, handle_objects_error)
-.then(function () { return prerenderPrefix.doChangePrefix(prefix); });
+.then(function (results) {
+	console.log('handle objects array: ', results);
+	return prerenderPrefix.doChangePrefix(prefix);
+})
+.then(
+	function (args) {
+		console.log('exiting: ', args);
+		process.exit();
+});
 
-
-// .then(handle_objects, handle_objects_error)
-// .then(function (args) {
-// 	console.log('handle objects array: ', args);
-// 	return Q.resolve(args);
-// })
-// .then(
-// 	function(args) {
-// 		console.log('n:', args);
-// 		return prerenderPrefix.doChangePrefix(prefix);
-// 	}
-// )
-// .then(
-// 	function (args) {
-// 		console.log('args: ', args);
-// 		process.exit();
-// 	}
-// );
 
 // JBT not deleteing these for testing purposes
 // s3.deleteObject({Key: key}, function(err, data) {
