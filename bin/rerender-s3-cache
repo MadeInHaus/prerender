@@ -39,7 +39,7 @@ var newPrefix = 'prerender_' + prefixNum;
 console.log('new prefix: ' + newPrefix);
 
 
-function handle_object(item) {
+function handleObject(item) {
 	var deferred = Q.defer();
 	console.log('got item: ', item);
 
@@ -53,7 +53,7 @@ function handle_object(item) {
 }
 
 
-function handle_object_result(res) {
+function handleObjectResult(res) {
 	var deferred = Q.defer();
 	console.log('statusCode: ', res.statusCode);
 	if (res.statusCode != 200) {
@@ -64,14 +64,14 @@ function handle_object_result(res) {
 }
 
 
-function handle_object_error(err) {
+function handleObjectError(err) {
 	console.log('error:', err);
 	throw new Error(err);
 }
 
 
-function handle_objects(data) {
-	console.log('handle_objects: ', data);
+function handleObjects(data) {
+	console.log('handleObjects: ', data);
 	var queue = [];
 
 	for (var item in data) {
@@ -81,7 +81,7 @@ function handle_objects(data) {
 			endpoints.forEach(
 				function(endpoint) {
 					console.log('item: ', endpoint);
-					queue.push(Q.fcall(handle_object, endpoint).then(handle_object_result, handle_object_error));
+					queue.push(Q.fcall(handleObject, endpoint).then(handleObjectResult, handleObjectError));
 				}
 			);
 		}
@@ -90,8 +90,8 @@ function handle_objects(data) {
 }
 
 
-function handle_objects_error(err) {
-		console.log("handle_objects_error: ", err, err.stack); // an error occurred
+function handleObjectsError(err) {
+		console.log("handleObjectsError: ", err, err.stack); // an error occurred
 		throw 'retry';
 }
 
@@ -123,9 +123,9 @@ prerenderPrefix.doChangePrefix(newPrefix)
 .then(function () { return currentCachedURLs.getCacheMap(prefix); })
 .then(function (cacheMap) {
 console.log('cacheMap: ', cacheMap);
-	promise = function() { return handle_objects(cacheMap) };
+	promise = function() { return handleObjects(cacheMap) };
 	return retry(promise, 5);
-}, handle_objects_error)
+}, handleObjectsError)
 .then(function (results) {
 	console.log('handle objects array: ', results);
 	return prerenderPrefix.doChangePrefix(prefix);
