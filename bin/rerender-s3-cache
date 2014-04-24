@@ -56,16 +56,17 @@ function handle_object(item) {
 function handle_object_result(res) {
 	var deferred = Q.defer();
 	console.log('statusCode: ', res.statusCode);
+	if (res.statusCode != 200) {
+		deferred.reject("Did not get a 200");
+	}
 	deferred.resolve(res.statusCode == 200);
 	return deferred.promise;
 }
 
 
 function handle_object_error(err) {
-	var deferred = Q.defer();
 	console.log('error:', err);
-	deferred.resolve(false);
-	return deferred.promise;
+	throw new Error(err);
 }
 
 
@@ -91,19 +92,45 @@ function handle_objects(data) {
 
 function handle_objects_error(err) {
 		console.log("handle_objects_error: ", err, err.stack); // an error occurred
+		throw 'retry';
+}
+
+function retry(promise, maxRetries, retryNum) {
+	var delayDuration = 5000;
+
+	// optionally can be called with only the promise and maxRetries defined
+	if (typeof retryNum === "undefined") {
+		retryNum = 0;
+	}
+
+	if (retryNum>maxRetries) {
+		console.log("reached max retries");
+		return Q(false);
+	}
+
+	if (retryNum>0) console.log('retry: ', retryNum);
+
+	return Q().delay(retryNum>0?delayDuration:0)
+		.then(function() {return promise();})
+		.then(undefined,
+			function(err) {
+				console.log('got an error, retrying: ', err);
+				return retry(promise, maxRetries, retryNum+1);
+			});
 }
 
 prerenderPrefix.doChangePrefix(newPrefix)
 .then(function () { return currentCachedURLs.getCacheMap(prefix); })
 .then(function (cacheMap) {
-	console.log('cacheMap: ', cacheMap);
-	return handle_objects(cacheMap);
+console.log('cacheMap: ', cacheMap);
+	promise = function() { return handle_objects(cacheMap) };
+	return retry(promise, 5);
 }, handle_objects_error)
 .then(function (results) {
 	console.log('handle objects array: ', results);
 	return prerenderPrefix.doChangePrefix(prefix);
 })
-.then(
+.done(
 	function (args) {
 		console.log('exiting: ', args);
 		process.exit();
