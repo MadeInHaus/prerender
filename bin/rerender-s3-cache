@@ -13,11 +13,11 @@
 
 */
 
-var http = require('http');
 var Q = require('q');
 
-var prerenderPrefix = require('./prerenderPrefix');
-var currentCachedURLs = require('./currentCachedURLs');
+var prerenderPrefix = require('./lib/prerenderPrefix');
+var currentCachedURLs = require('./lib/currentCachedURLs');
+var renderCacheMap = require('./lib/renderCacheMap').renderCacheMap;
 
 var prerenderURL = process.env.HEROKU_APP_NAME + '.herokuapp.com';
 
@@ -39,93 +39,11 @@ var newPrefix = 'prerender_' + prefixNum;
 console.log('new prefix: ' + newPrefix);
 
 
-function handleObject(item) {
-	var deferred = Q.defer();
-	console.log('got item: ', item);
 
-	http.request({
-		hostname: prerenderURL,
-		path: '/' + item,
-		method: 'GET'
-	}, deferred.resolve).end();
-
-	return deferred.promise;
-}
-
-
-function handleObjectResult(res) {
-	var deferred = Q.defer();
-	console.log('statusCode: ', res.statusCode);
-	if (res.statusCode != 200) {
-		deferred.reject("Did not get a 200");
-	}
-	deferred.resolve(res.statusCode == 200);
-	return deferred.promise;
-}
-
-
-function handleObjectError(err) {
-	console.log('error:', err);
-	throw new Error(err);
-}
-
-
-function handleObjects(data) {
-	console.log('handleObjects: ', data);
-	var queue = [];
-
-	for (var item in data) {
-		console.log('item: ', item);
-		if (data.hasOwnProperty(item)) {
-			var endpoints = data[item];
-			endpoints.forEach(
-				function(endpoint) {
-					console.log('item: ', endpoint);
-					queue.push(Q.fcall(handleObject, endpoint).then(handleObjectResult, handleObjectError));
-				}
-			);
-		}
-	}
-	return Q.all(queue);
-}
-
-
-function handleObjectsError(err) {
-		console.log("handleObjectsError: ", err, err.stack); // an error occurred
-		throw 'retry';
-}
-
-function retry(promise, maxRetries, retryNum) {
-	var delayDuration = 5000;
-
-	// optionally can be called with only the promise and maxRetries defined
-	if (typeof retryNum === "undefined") {
-		retryNum = 0;
-	}
-
-	if (retryNum>maxRetries) {
-		console.log("reached max retries");
-		return Q(false);
-	}
-
-	if (retryNum>0) console.log('retry: ', retryNum);
-
-	return Q().delay(retryNum>0?delayDuration:0)
-		.then(function() {return promise();})
-		.then(undefined,
-			function(err) {
-				console.log('got an error, retrying: ', err);
-				return retry(promise, maxRetries, retryNum+1);
-			});
-}
 
 prerenderPrefix.doChangePrefix(newPrefix)
 .then(function () { return currentCachedURLs.getCacheMap(prefix); })
-.then(function (cacheMap) {
-console.log('cacheMap: ', cacheMap);
-	promise = function() { return handleObjects(cacheMap) };
-	return retry(promise, 5);
-}, handleObjectsError)
+.then(renderCacheMap)
 .then(function (results) {
 	console.log('handle objects array: ', results);
 	return prerenderPrefix.doChangePrefix(prefix);
