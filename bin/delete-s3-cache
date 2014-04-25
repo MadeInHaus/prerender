@@ -3,6 +3,10 @@
 var s3 = new (require('aws-sdk')).S3({params:{Bucket: process.env.S3_BUCKET_NAME}});
 var http = require('http');
 
+var deletePrefix = require('./lib/deletePrefix').deletePrefix;
+
+console.log('deletePrefix: ', deletePrefix);
+
 var prerender_url = process.env.HEROKU_APP_NAME + '.herokuapp.com';
 
 var prefix = '';
@@ -10,20 +14,27 @@ if (process.env.S3_PREFIX_KEY) {
 		prefix = process.env.S3_PREFIX_KEY + '/';
 };
 
-s3.listObjects({ Prefix: prefix }, function(err, data) {
-		console.log('S3 Object List');
-	  if (err) console.log(err, err.stack); // an error occurred
-		else {
-			data.Contents.forEach(function(item) {
-				var key = item.Key;
-				console.log('deleting: ' + key);
-				s3.deleteObject({Key: key}, function(err, data) {
-					if (err) console.log(err, err.stack);
-					else {
-						console.log(data);
-					};
-				});
-			});
+deletePrefix(prefix)
+.done(
+	function (args) {
+		console.log('args: ', args); 
+		process.exit();
+	});
 
-		};
-});
+// s3.listObjects({ Prefix: prefix }, function(err, data) {
+// 		console.log('S3 Object List');
+// 	  if (err) console.log(err, err.stack); // an error occurred
+// 		else {
+// 			data.Contents.forEach(function(item) {
+// 				var key = item.Key;
+// 				console.log('deleting: ' + key);
+// 				s3.deleteObject({Key: key}, function(err, data) {
+// 					if (err) console.log(err, err.stack);
+// 					else {
+// 						console.log(data);
+// 					};
+// 				});
+// 			});
+//
+// 		};
+// });
