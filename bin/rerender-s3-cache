@@ -19,7 +19,6 @@ var prerenderPrefix = require('./lib/prerenderPrefix');
 var currentCachedURLs = require('./lib/currentCachedURLs');
 var renderCacheMap = require('./lib/renderCacheMap').renderCacheMap;
 
-var prerenderURL = process.env.HEROKU_APP_NAME + '.herokuapp.com';
 
 var prefix = '';
 if (process.env.S3_PREFIX_KEY) {
