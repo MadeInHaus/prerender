@@ -33,7 +33,7 @@ module.exports = {
   },
 
   getCacheMapName: function(prefix) {
-    return "CacheMap." + prefix + ".json";
+    return "CacheMap.json";
   },
 
   getStoredCacheMap: function(prefix) {

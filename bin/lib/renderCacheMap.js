@@ -32,12 +32,6 @@ function renderEndpointResult(res) {
 }
 
 
-function renderEndpointError(err) {
-  console.log('error:', err);
-  throw new Error(err);
-}
-
-
 function renderEndpoints(data) {
   console.log('handleObjects: ', data);
   var queue = [];
@@ -49,7 +43,7 @@ function renderEndpoints(data) {
       endpoints.forEach(
         function(endpoint) {
           console.log('item: ', endpoint);
-          queue.push(Q.fcall(renderEndpoint, endpoint).then(renderEndpointResult, renderEndpointError));
+          queue.push(Q.fcall(renderEndpoint, endpoint).then(renderEndpointResult));
         }
       );
     }

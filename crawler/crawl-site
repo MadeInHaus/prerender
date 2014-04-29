@@ -1,0 +1,23 @@
+#! /app/vendor/node/bin/node
+
+var Crawler = require("crawler").Crawler;
+
+var c = new Crawler({
+  "maxConnections":10,
+
+  // This will be called for each crawled page
+  "callback":function(error,result,$) {
+
+      // $ is a jQuery instance scoped to the server-side DOM of the page
+      $("a").each(function(index,a) {
+          c.queue(a.href+"?_escaped_fragment_=");
+          console.log('queuing: ', a.href+"?_escaped_fragment_=");
+      });
+    },
+
+    skipDuplicates: true
+
+});
+
+// Queue just one URL, with default callback
+c.queue("http://haus-com-dev.herokuapp.com?_escaped_fragment_=");
