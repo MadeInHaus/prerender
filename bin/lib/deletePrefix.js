@@ -7,8 +7,10 @@ var currentCachedURLs = require('./currentCachedURLs');
 
 function deleteEndpoint(endpoint) {
   var deferred = Q.defer();
-  console.log('hah endpoint:', endpoint);
-  deferred.resolve('true');
+
+  console.log('deleting endpoint:', endpoint);
+  s3.deleteObject({Key: key}, deferred.makeNodeResolver());
+
   return deferred.promise;
 }
 

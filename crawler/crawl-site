@@ -2,6 +2,14 @@
 
 var Crawler = require("crawler").Crawler;
 
+if (process.argv.length>2) {
+  var domain = process.argv[2];
+} else {
+  var domain = "http://haus-com-dev.herokuapp.com";
+}
+
+done = {};
+
 var c = new Crawler({
   "maxConnections":10,
 
@@ -10,14 +18,26 @@ var c = new Crawler({
 
       // $ is a jQuery instance scoped to the server-side DOM of the page
       $("a").each(function(index,a) {
-          c.queue(a.href+"?_escaped_fragment_=");
-          console.log('queuing: ', a.href+"?_escaped_fragment_=");
+          var thisURL = $(a).prop('href');
+          if (thisURL.indexOf("?_escaped_fragment_=")<0) {
+              var connector = thisURL.indexOf('?')>0 ? "&" : "?";
+              thisURL += connector + "_escaped_fragment_=";
+          }
+          if (thisURL.indexOf(domain) == 0) {
+            if (done[thisURL] == undefined) {
+              c.queue(thisURL);
+              console.log('queuing: ', thisURL);
+              done[thisURL] = true;
+            }
+          } else {
+            console.log('skipping: ', thisURL);
+          }
       });
     },
 
     skipDuplicates: true
-
 });
 
+
 // Queue just one URL, with default callback
-c.queue("http://haus-com-dev.herokuapp.com?_escaped_fragment_=");
+c.queue(domain+"?_escaped_fragment_=");

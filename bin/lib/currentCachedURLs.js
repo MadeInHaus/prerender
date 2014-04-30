@@ -6,7 +6,6 @@ var url = require('url');
 
 module.exports = {
   getObjects: function(prefix) {
-  	console.log('get_objects: ', prefix);
   	var deferred = Q.defer();
   	s3.listObjects({ Prefix: prefix}, deferred.makeNodeResolver());
   	return deferred.promise;
@@ -14,7 +13,6 @@ module.exports = {
 
   constructCacheMap: function(prefix) {
     return function(data) {
-    	console.log('constructList: ', data.Contents.length);
       var deferred = Q.defer();
       var theMap = {};
     	data.Contents.forEach(function(item) {
@@ -65,21 +63,22 @@ module.exports = {
   },
 
   getCacheMap: function(prefix) {
-    var obj = this;
+    var obj = this; // Note for the future:  had trouble referring to other functions in this object without this var, is this the right way to solve this problem?
 
     return this.getStoredCacheMap(prefix)
     .then(function(data) {
       data = data.Body.toString();
-      console.log('data: ', data);
       return Q(JSON.parse(data));
     })
     .fail(function (error) {
       console.log("Got Error: ", error);
-      return Q(obj.collectCacheMap(prefix)
-        .then(function(cacheMap) {
-          return obj.setStoredCacheMap(prefix, cacheMap)
-            .then(function() { return Q(cacheMap); });
-        }));
+      return Q(obj.collectCacheMap(prefix).then(
+          function(cacheMap) {
+            return obj.setStoredCacheMap(prefix, cacheMap)
+              .then(function() { return Q(cacheMap); });
+            }
+          )
+        );
     });
   }
 

@@ -1,0 +1,23 @@
+#! /app/vendor/node/bin/node
+
+/**
+
+*/
+
+
+var currentCachedURLs = require('./lib/currentCachedURLs');
+
+var prefix = '';
+if (process.env.S3_PREFIX_KEY) {
+    prefix = process.env.S3_PREFIX_KEY;
+}
+console.log('prefix: ' + prefix);
+
+
+
+currentCachedURLs.collectCacheMap(prefix)
+.done(
+  function (args) {
+    console.log('cacheMap: ', args);
+    process.exit();
+});
