@@ -9,7 +9,7 @@ function deleteEndpoint(endpoint) {
   var deferred = Q.defer();
 
   console.log('deleting endpoint:', endpoint);
-  s3.deleteObject({Key: key}, deferred.makeNodeResolver());
+  s3.deleteObject({Key: endpoint}, deferred.makeNodeResolver());
 
   return deferred.promise;
 }

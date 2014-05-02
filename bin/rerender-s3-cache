@@ -45,19 +45,10 @@ prerenderPrefix.doChangePrefix(newPrefix)
 .fail(function (err) {
 	console.log('Got an error:', err);
 	console.log('Changing prerender prefix back to: ', prefix);
-	return prerenderPrefix.doChangePrefix(prefix);	
+	return prerenderPrefix.doChangePrefix(prefix);
 })
 .done(
 	function (args) {
 		console.log('exiting: ', args);
 		process.exit();
 });
-
-
-// JBT not deleteing these for testing purposes
-// s3.deleteObject({Key: key}, function(err, data) {
-// 	if (err) console.log(err, err.stack);
-// 	else {
-// 		console.log(data);
-// 	};
-// });
