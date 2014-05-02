@@ -17,8 +17,7 @@ function makeCrawler() {
           console.log('Got error: ', error);
           return;
         }
-        console.log('queue: ', result.host);
-        console.log('count: ', count);
+        console.log('queue count: ', count);
         // $ is a jQuery instance scoped to the server-side DOM of the page
         $("a").each(function(index,a) {
             var thisURL = $(a).prop('href');

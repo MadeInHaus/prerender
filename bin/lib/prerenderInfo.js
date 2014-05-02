@@ -36,6 +36,9 @@ function update() {
     }
   );
 
+  if (process.env.ALLOWED_DOMAINS) {
+    info.whiteList = process.env.ALLOWED_DOMAINS.split(',');
+  }
 
   return deferred.promise;
 }
