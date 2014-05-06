@@ -6,7 +6,10 @@
 
 info = require('./lib/prerenderInfo');
 
-info.update().done(function (){
+
+info.update().fail(function (err) {
+  console.log('error: ', err);
+}).then(function () {
   console.log('info done.');
   console.log('info: ', info);
 });

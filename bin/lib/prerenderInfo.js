@@ -29,11 +29,17 @@ function update() {
 
   var deferred = Q.defer();
   currentCachedURLs.collectCacheMap(info.prefix)
-  .done(
+  .then(
     function (cacheMap) {
+
       info.cacheMap = cacheMap;
       deferred.resolve(info);
+    },
+    function (err) {
+      console.log('got this err: ', err);
+      deferred.reject(err);
     }
+
   );
 
   if (process.env.ALLOWED_DOMAINS) {

@@ -6,6 +6,7 @@ var url = require('url');
 
 module.exports = {
   getObjects: function(prefix) {
+    console.log('prefix: ', prefix);
   	var deferred = Q.defer();
   	s3.listObjects({ Prefix: prefix}, deferred.makeNodeResolver());
   	return deferred.promise;
@@ -24,8 +25,8 @@ module.exports = {
         if (!theMap[parts.host]) theMap[parts.host] = [parts.href];
         else theMap[parts.host].push(parts.href)
 
-        deferred.resolve(theMap);
     	});
+      deferred.resolve(theMap);
     	return deferred.promise;
     };
   },
