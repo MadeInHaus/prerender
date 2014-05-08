@@ -31,7 +31,6 @@ function update() {
   currentCachedURLs.collectCacheMap(info.prefix)
   .then(
     function (cacheMap) {
-
       info.cacheMap = cacheMap;
       deferred.resolve(info);
     },
@@ -39,7 +38,6 @@ function update() {
       console.log('got this err: ', err);
       deferred.reject(err);
     }
-
   );
 
   if (process.env.ALLOWED_DOMAINS) {

@@ -41,9 +41,8 @@ module.exports = {
 
     console.log("getStoredCacheMap");
 
-    s3.getObject({Key: this.getCacheMapName(prefix)}, deferred.makeNodeResolver())
-    // .on('httpData', function(chunk) { content += chunk; })
-    // .on('httpDone', function() { deferred.resolve(content); })
+    var options = {Key: this.getCacheMapName(prefix)};
+    s3.getObject(options, deferred.makeNodeResolver())
     .send();
 
     return deferred.promise;
@@ -52,9 +51,12 @@ module.exports = {
   setStoredCacheMap: function(prefix, cacheMap) {
     var deferred = Q.defer();
 
-    s3.putObject(
-      {Key: this.getCacheMapName(prefix), Body: JSON.stringify(cacheMap)},
-      deferred.makeNodeResolver());
+    var options = {
+      Key: this.getCacheMapName(prefix),
+      Body: JSON.stringify(cacheMap)
+    };
+
+    s3.putObject(options, deferred.makeNodeResolver());
 
     return deferred.promise;
   },
@@ -64,8 +66,7 @@ module.exports = {
   },
 
   getCacheMap: function(prefix) {
-    var obj = this; // Note for the future:  had trouble referring to other functions in this object without this var, is this the right way to solve this problem?
-
+    var self = this;
     return this.getStoredCacheMap(prefix)
     .then(function(data) {
       data = data.Body.toString();
@@ -73,9 +74,9 @@ module.exports = {
     })
     .fail(function (error) {
       console.log("Got Error: ", error);
-      return Q(obj.collectCacheMap(prefix).then(
+      return Q(self.collectCacheMap(prefix).then(
           function(cacheMap) {
-            return obj.setStoredCacheMap(prefix, cacheMap)
+            return self.setStoredCacheMap(prefix, cacheMap)
               .then(function() { return Q(cacheMap); });
             }
           )

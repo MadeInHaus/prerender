@@ -11,5 +11,10 @@ info.update().fail(function (err) {
   console.log('error: ', err);
 }).then(function () {
   console.log('info done.');
-  console.log('info: ', info);
+  var data = info.info;
+  for (var property in data) {
+      if (data.hasOwnProperty(property) &&  typeof data[property] != 'function') {
+        console.log(property+':', data[property]);
+      }
+  }
 });
