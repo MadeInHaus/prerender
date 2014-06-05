@@ -3,9 +3,6 @@
   "name": "prerender",
   "description": "Service to prerender Javascript rendered pages for SEO",
   "version": "3.3.4",
-  "engines": {
-    "node": "0.10.26"
-  },
   "repository": {
     "type": "git",
     "url": "https://github.com/prerender/prerender"
