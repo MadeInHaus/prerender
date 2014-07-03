@@ -10,6 +10,8 @@ var server = prerender({
 });
 
 
+server.use(prerender.status());
+
 // server.use(prerender.basicAuth());
 server.use(prerender.whitelist());
 // server.use(prerender.blacklist());
@@ -18,5 +20,6 @@ server.use(prerender.removeScriptTags());
 server.use(prerender.httpHeaders());
 // server.use(prerender.inMemoryHtmlCache());
 server.use(prerender.s3HtmlCache());
+
 
 server.start();
