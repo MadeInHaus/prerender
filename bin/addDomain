@@ -1,13 +1,10 @@
 #! /app/vendor/node/bin/node
 
+herokuEnv = require('./lib/herokuEnv.js');
 
 // get domain arg
 if (process.argv.length>2) {
   var domain = process.argv[2];
-  if (domain.indexOf('http')<0) {
-    console.log('got ' + domain + ' adding http');
-    domain = 'http://' + domain;
-  }
 } else {
   console.log('usage: addDomain domain-name');
   process.exit();
@@ -17,6 +14,12 @@ var info = require('./lib/prerenderInfo');
 
 info.update().then(function (info) {
   console.log('whitelist: ', info.whiteList);
+})
+.then(function () {
+  if (info.whiteList.indexOf(domain)<0) {
+    info.whiteList.push(domain);
+    return herokuEnv.setEnv('ALLOWED_DOMAIN_TEST', info.whiteList.join(','));
+  }
 });
 
 // add to heroku env
