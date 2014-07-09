@@ -8,7 +8,7 @@ function makeCrawler() {
   var count = 0; // counts the number of urls that have been queued
 
   var crawler = new Crawler({
-    "maxConnections": 10,
+    "maxConnections": 5,
 
     // This will be called for each crawled page
     "callback":function(error,result,$) {

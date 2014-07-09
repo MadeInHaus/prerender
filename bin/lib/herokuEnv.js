@@ -10,6 +10,8 @@ module.exports = {
     data[name] = value;
     data = JSON.stringify(data);
 
+    console.log('setting: ', data);
+
     var req = https.request({
       hostname: 'api.heroku.com',
       path: '/apps/' + process.env.HEROKU_APP_NAME + '/config-vars',
