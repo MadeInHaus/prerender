@@ -13,17 +13,21 @@ if (process.argv.length>2) {
 var info = require('./lib/prerenderInfo');
 
 info.update().then(function (info) {
-  console.log('whitelist: ', info.whiteList);
+  console.log('whiteList: ', info.whiteList);
 
   if (info.whiteList.indexOf(domain)<0) {
     info.whiteList.push(domain);
     console.log('setting whitelist: ', info.whiteList);
-    return herokuEnv.setEnv('ALLOWED_DOMAIN_TEST', info.whiteList.join(','));
+    return herokuEnv.setEnv('ALLOWED_DOMAINS', info.whiteList.join(','));
   }
 }).then(function () {
-  return info.update;
+  return info.update();
 }).fail(function (err) {
   console.log('got error: ', err);
+}).done(function (info) {
+  console.log('whiteList: ', info.whiteList);
+
+  console.log('done.');
 });
 
 
