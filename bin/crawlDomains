@@ -1,0 +1,25 @@
+#! /app/vendor/node/bin/node
+var Q = require('q');
+var info = require('./lib/prerenderInfo');
+var crawler = require('./lib/crawler');
+
+info.update().then(function (info) {
+  var promise = Q();
+
+  console.log('whiteList: ', info.whiteList);
+
+  info.whiteList.forEach(function (domain) {
+    promise = promise.then(function() {
+        console.log('crawling: ', 'http://'+domain);
+
+        return crawler.crawl('http://'+domain);
+    });
+  });
+
+  return promise;
+}).fail(function (err) {
+  console.log('got error: ', err);
+}).done(function (info) {
+  console.log('done.');
+  process.exit();
+});

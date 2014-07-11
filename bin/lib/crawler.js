@@ -33,7 +33,7 @@ function makeCrawler() {
                 done[thisURL] = true;
               }
             } else {
-              console.log('skipping: ', thisURL);
+              // console.log('skipping: ', thisURL);
             }
         });
 

@@ -28,8 +28,5 @@ info.update().then(function (info) {
   console.log('whiteList: ', info.whiteList);
 
   console.log('done.');
+  process.exit();
 });
-
-
-
-// crawl domain with prerender
