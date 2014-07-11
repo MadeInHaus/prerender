@@ -1,0 +1,20 @@
+#! /app/vendor/node/bin/node
+
+var deletePrefix = require('./lib/deletePrefix').deletePrefix;
+var info = require('./lib/prerenderInfo');
+var crawler = require('./lib/crawler');
+
+
+info.update()
+.then(function (info) {
+  console.log('deleting cache: ', info.prefix)
+  return deletePrefix(info.prefix);
+}).then(function () {
+  console.log('whiteList: ', info.info.whiteList);
+  return crawler.crawlDomains(info.info.whiteList);
+}).fail(function (err) {
+  console.log('got error: ', err);
+}).done(function (info) {
+  console.log('done.');
+  process.exit();
+});

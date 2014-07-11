@@ -2,6 +2,7 @@ var Q = require('q');
 
 var Crawler = require("crawler").Crawler;
 
+
 function makeCrawler() {
   var domain;    // only crawl the given domain
   var done = {}; // used to ensure that a url is only crawled once
@@ -25,6 +26,7 @@ function makeCrawler() {
                 var connector = thisURL.indexOf('?')>0 ? "&" : "?";
                 thisURL += connector + "_escaped_fragment_=";
             }
+            thisURL = thisURL.replace(/#+$/, '');  //ommit final # if present
             if (thisURL.indexOf(domain) == 0) {
               if (done[thisURL] == undefined) {
                 crawler.queue(thisURL);
@@ -56,11 +58,34 @@ function makeCrawler() {
     return crawler.deferred.promise;
   }
 
+
   crawl.crawler = crawler;
 
   return crawl;
 }
 
+function crawlDomains(domains) {
+  var promise = Q();
+  var crawler = makeCrawler()
+
+  domains.forEach(function (domain) {
+    promise = promise.then(function() {
+      if (domain.indexOf('http') != 0) {
+          domain = 'http://' + domain
+      }
+
+      console.log('crawling: ', domain);
+
+      return crawler(domain)
+      });
+
+  });
+
+  return promise;
+}
+
+
 module.exports = {
-  crawl: makeCrawler()
+  crawl: makeCrawler(),
+  crawlDomains: crawlDomains,
 }

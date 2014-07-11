@@ -3,10 +3,13 @@
 var deletePrefix = require('./lib/deletePrefix').deletePrefix;
 var info = require('./lib/prerenderInfo');
 
+
 info.update()
-.then(function (info) {return deletePrefix(info.prefix)})
-.done(
+.then(function (info) {
+	console.log('deleting cache: ', info.prefix)
+	return deletePrefix(info.prefix);
+}).done(
 	function (args) {
-		console.log('args: ', args);
 		process.exit();
-	});
+	}
+);
